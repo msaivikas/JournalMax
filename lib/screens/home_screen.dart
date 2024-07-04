@@ -52,11 +52,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return DateTime.parse(dateString);
   }
 
-  Future<void> _loadUserEmail() async {
-    _userEmail = await AuthHelperLocal.getUserEmail();
+  Future<String?> _loadUserEmail() async {
+    String? email = await AuthHelperLocal.getUserEmail();
     if (_userEmail != null) {
+      _userEmail = email;
       _loadJournalEntries();
       debugPrint(_userEmail!);
+      return _userEmail;
     } else {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -66,8 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _userEmail = await AuthHelperLocal.getUserEmail();
       }
     }
-    debugPrint(_userEmail);
-    debugPrint('line 72\n');
+    return _userEmail;
   }
 
   void _sendReportEmail() async {
@@ -356,15 +357,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.only(top: 50.0),
             children: [
-              ListTile(
-                title: Text(
-                  _userEmail ??
-                      'hello, Minimalist!', // idk why but if you open drawer for the first time without clicking on anything, _userEmail is being considered as empty here eventhough it isn't.
-                  style: GoogleFonts.courierPrime(
-                      fontSize: 18,
-                      color: Colors.deepOrange,
-                      fontWeight: FontWeight.bold),
-                ),
+              FutureBuilder<String?>(
+                future: _loadUserEmail(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const ListTile(
+                      title: Text(
+                        'email id loading...',
+                        style: TextStyle(color: Colors.deepOrange),
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    return const ListTile(
+                      title: Text(
+                        'Error loading user email',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  } else {
+                    final String email = snapshot.data ?? 'hello, Minimalist!';
+                    return ListTile(
+                      title: Text(
+                        email,
+                        style: GoogleFonts.courierPrime(
+                            fontSize: 18,
+                            color: Colors.deepOrange,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  }
+                },
               ),
               ListTile(
                 title: const Text(
