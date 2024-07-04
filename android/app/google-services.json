@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "189845748635",
+    "project_id": "journalmax-6ca4a",
+    "storage_bucket": "journalmax-6ca4a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189845748635:android:5cf13e931e5d95944fbf3e",
+        "android_client_info": {
+          "package_name": "com.example.journal_max"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "189845748635-1i3gqn4sl6vi5nkl323v2n7c304pqil0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.journal_max",
+            "certificate_hash": "71a2e1848aecfed15b0a217b90aa3645289c348f"
+          }
+        },
+        {
+          "client_id": "189845748635-kr9vvpevhvbodj7234mqmigsj6dc8qbi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFx0tv4AFu8HmCne1JwkgMLWT7Im3AXck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "189845748635-kr9vvpevhvbodj7234mqmigsj6dc8qbi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
