@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 
@@ -51,7 +50,6 @@ class DatabaseHelper {
 
   Future<int> insertJournal(String userEmail, String textContent, String date,
       String timeStamp) async {
-    debugPrint('inserting into Journal : database_helper/insertJournal \n');
     Database db = await database;
     Map<String, dynamic> row = {
       columnUserId: userEmail,
@@ -64,9 +62,6 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getTodaysJournal(
       String userEmail, String? date) async {
-    // HANDLE NULL DATE STRING
-    debugPrint(
-        'getting todays journal : database_helper.getTodaysJournal() \n');
     Database db = await database;
 
     return db.query(tableFullJournal,
@@ -77,7 +72,6 @@ class DatabaseHelper {
 
   Future<int> insertActionItem(
       String userEmail, String textContent, String date) async {
-    debugPrint('inserting action item : database_helper.insertActionItem()\n');
     Database db = await database;
     Map<String, dynamic> row = {
       columnUserId: userEmail,
@@ -103,9 +97,6 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getTodaysActionItems(
       String userEmail, String date) async {
-    // WHY'S THIS RETURN TYPE LIKE THIS? AREN'T WE ONLY RETURNING ONE ROW i.e., WE'RE ONLY RETURNING ONE ITEM WHICH IS OF TYPE Map<String, dynamic>
-    debugPrint(
-        'getting todays action items : database_helper.getTodaysActionItems() \n ');
     Database db = await database;
     return await db.query(tableActionItems,
         where: '$columnUserId = ? AND $columnDate = ?',
@@ -113,8 +104,6 @@ class DatabaseHelper {
   }
 
   Future<int> deleteJournalItem(String userEmail, String timeStamp) async {
-    debugPrint(
-        'deleting individual journal item : database_helper.deleteJournalItem() \n');
     Database db = await database;
     return db.delete(
       tableFullJournal,
@@ -132,8 +121,6 @@ class DatabaseHelper {
   }
 
   Future<int> deleteAllUserJournals(String userEmail) async {
-    debugPrint(
-        'deleting all user journals : database_helper.deleteAllUserJournals() \n');
     Database db = await database;
     return db.delete(
       tableFullJournal,
@@ -143,8 +130,6 @@ class DatabaseHelper {
   }
 
   Future<int> deleteAllActionItems(String userEmail) async {
-    debugPrint(
-        'deleting all action items : database_helper.deleteAllActionItems()\n');
     Database db = await database;
     return db.delete(
       tableActionItems,

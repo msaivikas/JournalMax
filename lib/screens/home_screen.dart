@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/bottom_buttons_widget.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -24,41 +23,32 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _journalEntries = [];
   final DatabaseHelper _databaseHelper = DatabaseHelper();
 
+  bool defaultDateSelect = true;
+
   @override
   void initState() {
     super.initState();
-    _loadUserEmail();
-    DateTime defaultDate = DateTime.now();
-    setCalendarDate(defaultDate);
+    _initializeScreen();
   }
 
-  Future<void> setCalendarDate(DateTime date) async {
-    debugPrint('setting Calendar date : home_screen.setCalendarDate() \n');
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedDate', date.toIso8601String());
+  Future<void> _initializeScreen() async {
+    await _loadUserEmail();
+    await _loadJournalEntries();
+    return;
   }
 
-  Future<DateTime> getCalendarDate() async {
-    debugPrint('getting CalendarDate : home_screen.getCalendarDate() \n');
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? dateString = prefs.getString('selectedDate');
-    debugPrint(dateString);
-    debugPrint(' is dateString of selectedDate in prefs');
-    DateTime now = DateTime.now();
-
-    dateString = (dateString == null)
-        ? (DateFormat('yyyy-MM-dd').format(now))
-        : dateString;
-    return DateTime.parse(dateString);
+  void setCalendarDate(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+    });
   }
 
-  Future<String?> _loadUserEmail() async {
+  Future<void> _loadUserEmail() async {
     String? email = await AuthHelperLocal.getUserEmail();
-    if (_userEmail != null) {
+    if (email != null) {
       _userEmail = email;
-      _loadJournalEntries();
-      debugPrint(_userEmail!);
-      return _userEmail;
+      setState(() {});
+      return;
     } else {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -67,8 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _userEmail = await AuthHelperLocal.getUserEmail();
       }
+      setState(() {});
     }
-    return _userEmail;
+    return;
   }
 
   void _sendReportEmail() async {
@@ -89,8 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadJournalEntries() async {
     if (_userEmail == null) return;
-    final formattedDate =
-        DateFormat('yyyy-MM-dd').format(_selectedDate); // (mm,MM)?
+    final formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
 
     final entries =
         await _databaseHelper.getTodaysJournal(_userEmail!, formattedDate);
@@ -100,8 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addJournalEntry() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? selectedDateInCalendarString = prefs.getString('selectedDate');
+    final String selectedDateString =
+        DateFormat('yyyy-MM-dd').format(_selectedDate);
+    final String currentTimeStamp =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
     TextEditingController localTextEditingController = TextEditingController();
     showModalBottomSheet(
@@ -138,19 +130,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () async {
                           final textContent = localTextEditingController.text;
                           if (_userEmail == null || textContent.isEmpty) return;
-                          String currentDateString =
-                              DateFormat('yyyy-MM-dd').format(DateTime.now());
-                          if (selectedDateInCalendarString != null) {
-                            currentDateString = selectedDateInCalendarString;
-                          }
-                          final selectedDateInCalendar =
-                              DateTime.parse(currentDateString);
-                          final date = DateFormat('yyyy-MM-dd')
-                              .format(selectedDateInCalendar);
-                          final timeStamp = DateFormat('yyyy-MM-dd hh:mm:ss')
-                              .format(DateTime.now());
                           await _databaseHelper.insertJournal(
-                              _userEmail!, textContent, date, timeStamp);
+                              _userEmail!,
+                              textContent,
+                              selectedDateString,
+                              currentTimeStamp);
                           _loadJournalEntries();
                           Navigator.pop(context);
                         },
@@ -358,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(top: 50.0),
             children: [
               FutureBuilder<String?>(
-                future: _loadUserEmail(),
+                future: AuthHelperLocal.getUserEmail(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const ListTile(
@@ -415,7 +399,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(color: Colors.white),
                 ),
                 onTap: () {
-                  debugPrint('popup delete warning ...');
                   _popupDeleteWarning();
                 },
               ),
@@ -424,34 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         body: Column(
           children: [
-            FutureBuilder<DateTime>(
-              future: getCalendarDate(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return const Text(
-                    'Error',
-                    style: TextStyle(color: Colors.red, fontSize: 15),
-                  );
-                } else {
-                  final selectedDate = snapshot.data;
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      selectedDate != null
-                          ? DateFormat('MMMM d, yyyy').format(selectedDate)
-                          : 'No date selected',
-                      style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }
-              },
-            ),
+            _showDateSelected(),
             Expanded(child: _buildJournalEntriesList()),
             Container(
               color: Colors.yellow,
@@ -463,6 +419,18 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _showDateSelected() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(
+        DateFormat('MMMM dd yyyy').format(_selectedDate),
+        style: const TextStyle(
+            color: Colors.red, fontSize: 14, fontWeight: FontWeight.bold),
+        textAlign: TextAlign.center,
       ),
     );
   }
